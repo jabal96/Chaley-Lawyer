@@ -30,5 +30,12 @@ desktop.ini
 # Editor
 .vscode/
 
-# Jupyter checkpoints (if you use notebooks)
-.ipynb_checkpoints/
+# api testing 
+deepseek.py
+inference.py
+invidia.py
+openrouter.py
+pipeline_resultsjson
+system.txt
+system2.txt
+gemini_legal_assist.py
