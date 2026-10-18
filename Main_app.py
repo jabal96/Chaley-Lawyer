@@ -7,6 +7,7 @@ from google import genai
 from dotenv import load_dotenv
 from openai import OpenAI
 from google.genai import types
+from concurrent.futures import ThreadPoolExecutor
 load_dotenv()
 deepseek_model_name = "deepseek-flash"
 
@@ -149,6 +150,7 @@ def deepseek_chat(user_prompt:str,system_prompt:str):
             {"role": "user", "content": f"question : {user_prompt}"},
         ],
         stream=False,
+        extra_body={"thinking": {"type": "disabled"}},
     )
     return response
 
@@ -178,6 +180,7 @@ def deepseek_response_stream(main_user_prompt, main_sys_prompt):
             {"role": "user", "content": main_user_prompt},
         ],
         stream=True,
+        extra_body={"thinking": {"type": "disabled"}},
     )
  
     for chunk in response:
@@ -247,43 +250,93 @@ quotation marks around it.
     return rewriten_query.choices[0].message.content
 
 
-if __name__ == "__main__":    
-# crequest_context("what crime can lead to death sentence")
+if __name__ == "__main__":
     generated_answer = ""
-    with open("system3.txt","r") as f:
-     system_prompt = f.read()
-# print(system_prompt)     
+    with open("system3.txt", "r", encoding="utf-8") as f:
+        system_prompt = f.read()
+
     st.title("Personal legal Asistant")
     if "histories" not in st.session_state:
-        st.session_state.histories = []   
+        st.session_state.histories = []
     else:
-     
         for history in st.session_state.histories:
-
             with st.chat_message(history["role"]):
                 st.write(history["content"])
 
-      
     if question := st.chat_input("Ask something..."):
-        
+
         with st.chat_message("user"):
             st.write(question)
-        
+
         with st.chat_message("assistant"):
-            query_text = query_rewrite(question)
-            print(query_text)
-            legistation_context = request_legislation_context(query_text,KB_CODE_legis)
-            judgement_context = request_judgment_context(query_text,KB_CODE_judg)
+            with st.status("Searching Ghanaian law...", expanded=False) as status:
+                query_text = query_rewrite(question)
+                print(query_text)
 
-            # print(context)
-            user_prompt=prompt_template(legistation_chunks=legistation_context,question=question,judgement_chunks=judgement_context,history=st.session_state.histories)
-            print(user_prompt)
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    legis_future = pool.submit(request_legislation_context, query_text, KB_CODE_legis)
+                    judg_future = pool.submit(request_judgment_context, query_text, KB_CODE_judg)
+                    legistation_context = legis_future.result()
+                    judgement_context = judg_future.result()
 
-            response_stream = deepseek_response_stream(main_user_prompt=user_prompt,main_sys_prompt=system_prompt)
+                status.update(label="Sources found. Writing answer...", state="complete", expanded=False)
 
+            user_prompt = prompt_template(
+                legistation_chunks=legistation_context,
+                question=question,
+                judgement_chunks=judgement_context,
+                history=st.session_state.histories,
+            )
+
+            response_stream = deepseek_response_stream(
+                main_user_prompt=user_prompt,
+                main_sys_prompt=system_prompt,
+            )
             generated_answer = st.write_stream(response_stream)
 
         st.session_state.histories.append({"role": "user", "content": question})
-        
         st.session_state.histories.append({"role": "assistant", "content": generated_answer})
+
+
+
+
+# if __name__ == "__main__":    
+# # crequest_context("what crime can lead to death sentence")
+#     generated_answer = ""
+#     with open("system3.txt","r") as f:
+#      system_prompt = f.read()
+# # print(system_prompt)     
+#     st.title("Personal legal Asistant")
+#     if "histories" not in st.session_state:
+#         st.session_state.histories = []   
+#     else:
+     
+#         for history in st.session_state.histories:
+
+#             with st.chat_message(history["role"]):
+#                 st.write(history["content"])
+
+      
+#     if question := st.chat_input("Ask something..."):
+        
+#         with st.chat_message("user"):
+#             st.write(question)
+        
+#         with st.chat_message("assistant"):
+#             query_text = query_rewrite(question)
+#             print(query_text)
+#             legistation_context = request_legislation_context(query_text,KB_CODE_legis)
+#             judgement_context = request_judgment_context(query_text,KB_CODE_judg)
+
+#             # print(context)
+#             user_prompt=prompt_template(legistation_chunks=legistation_context,question=question,judgement_chunks=judgement_context,history=st.session_state.histories)
+#             print(user_prompt)
+
+#             response_stream = deepseek_response_stream(main_user_prompt=user_prompt,main_sys_prompt=system_prompt)
+
+#             generated_answer = st.write_stream(response_stream)
+
+#         st.session_state.histories.append({"role": "user", "content": question})
+        
+#         st.session_state.histories.append({"role": "assistant", "content": generated_answer})
 
