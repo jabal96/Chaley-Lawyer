@@ -1,4 +1,4 @@
-# Obeng: AI Legal Assistant for Ghanaian Law
+# Obeng: AI Legal Assistant for Ghanaians
 
 Understanding your rights shouldn't require a law degree or an expensive consultation. Obeng is your personal legal guide: like a knowledgeable friend who has read the law and can explain it in plain language, in English or Pidgin, any time you need it.
 
@@ -32,8 +32,9 @@ Describe your situation the way you'd tell a friend. Obeng searches real Ghanaia
 - Python 3.12+, [uv](https://docs.astral.sh/uv/) for dependencies
 - Streamlit for the chat UI
 - Laws.Africa Knowledge Bases API for retrieval
-- DeepSeek (via the `openai` SDK) for generation
+- DeepSeek (via the `openai` SDK) for query rewriting, generation, and as the evaluation judge
 - [Ragas](https://docs.ragas.io/) for reference-free evaluation
+- A local Hugging Face embedding model (runs on your own machine) for the evaluation's embedding-based metric
 
 ## Setup
 
@@ -51,17 +52,17 @@ uv sync
 **3. Add your API keys.** Copy `.env.example` to `.env` and fill in your values:
 ```
 DEEPSEEK_API_KEY=
-GEMINI_API_KEY=
 LAWS_AFRICA_API_KEY=
 ```
 
 | Variable | Used for | Where to get it |
 |---|---|---|
 | `LAWS_AFRICA_API_KEY` | Retrieving legislation and judgments | [Laws.Africa](https://developers.laws.africa/) |
-| `DEEPSEEK_API_KEY` | Generating answers | [DeepSeek Platform](https://platform.deepseek.com/) |
-| `GEMINI_API_KEY` | Evaluation judge model (and anything still using Gemini) | [Google AI Studio](https://aistudio.google.com/) |
+| `DEEPSEEK_API_KEY` | Query rewriting, answer generation, and the evaluation judge | [DeepSeek Platform](https://platform.deepseek.com/) |
 
 Never commit your `.env` file. It is already listed in `.gitignore`.
+
+**Embedding model (evaluation only).** The evaluation script needs an embedding model for the answer-relevancy metric. Obeng uses a **local Hugging Face embedding model** (`YOUR-MODEL-NAME-HERE`), so no extra API key is needed. The model downloads automatically the first time you run the evaluation, so allow some time and disk space on the first run. The chat app itself does not need it.
 
 **4. Run the app**
 ```bash
@@ -84,6 +85,8 @@ Retrieval and answer quality are measured with Ragas, using three reference-free
 - **Faithfulness:** does the answer stick to what was retrieved?
 - **Answer relevancy:** does the answer address the question asked?
 - **Context relevance:** was the retrieved context relevant to the question?
+
+Faithfulness and context relevance are scored by a judge LLM (DeepSeek). Answer relevancy also needs an **embedding model** to compare the user's question with questions generated from the answer. Obeng uses a local Hugging Face embedding model for this, so that part runs on your own machine at no API cost.
 
 Run it with:
 ```bash

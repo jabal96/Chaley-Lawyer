@@ -14,9 +14,6 @@ token = os.environ["LAWS_AFRICA_API_KEY"]
 KB_CODE_legis = "legislation-gh"
 KB_CODE_judg = "judgments-gh"
 
-model_name = "gemma4:31b-cloud"#""#"nemotron-3-super:cloud"#"llama3.2:3b" 
-
-token = os.environ["LAWS_AFRICA_API_KEY"]
 print(token)
 def request_legislation_context(question:str,kb_code:str):
    
