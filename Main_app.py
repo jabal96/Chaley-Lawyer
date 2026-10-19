@@ -15,6 +15,9 @@ token = os.environ["LAWS_AFRICA_API_KEY"]
 KB_CODE_legis = "legislation-gh"
 KB_CODE_judg = "judgments-gh"
 
+
+
+
 print(token)
 def request_legislation_context(question:str,kb_code:str):
    
@@ -250,25 +253,76 @@ quotation marks around it.
     return rewriten_query.choices[0].message.content
 
 
+st.set_page_config(
+    page_title="Obeng | Ghana Legal Assistant",
+    page_icon="assets/Obeng.png",
+    layout="centered",
+)
+
+OBENG_AVATAR = "assets/Obeng.png" if os.path.exists("assets/Obeng.png") else "⚖️"
+USER_AVATAR = "🧑🏾"
+
+def avatar_for(role: str) -> str:
+    return OBENG_AVATAR if role == "assistant" else USER_AVATAR
+
+
+
+
+
+
 if __name__ == "__main__":
+
     generated_answer = ""
     with open("system3.txt", "r", encoding="utf-8") as f:
         system_prompt = f.read()
 
-    st.title("Personal legal Asistant")
+    left, center, right = st.columns([2, 1, 2])
+    with center:
+        st.image(str("assets/Obeng.png"), use_column_width=True)
+
+    # st.markdown(
+    # "<h1 style='text-align: center; margin-bottom: 0;'>Obeng</h1>"
+    # "<p style='text-align: center; color: gray;'>Your personal legal assistant</p>",
+    # unsafe_allow_html=True,
+    # )
+
+    st.markdown(
+    "<h1 style='text-align: center; margin-bottom: 0;'>Obeng</h1>"
+    "<h4 style='text-align: center; margin-top: 0; color: #006B3F;'>Know where you stand.</h4>"
+    "<p style='text-align: center; color: gray; max-width: 520px; margin: 0 auto 1.5rem auto;'>"
+    "Tell Obeng your situation in English or Pidgin. Get plain-language answers "
+    "from real Ghanaian law, with sources you can check."
+    "</p>",
+    unsafe_allow_html=True,
+)
+    st.markdown(
+    """
+    <style>
+    [data-testid="stImage"] img {
+        border-radius: 50%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+
     if "histories" not in st.session_state:
         st.session_state.histories = []
     else:
         for history in st.session_state.histories:
-            with st.chat_message(history["role"]):
+            with st.chat_message(history["role"],avatar=avatar_for(history["role"])):
                 st.write(history["content"])
 
     if question := st.chat_input("Ask something..."):
 
-        with st.chat_message("user"):
+        with st.chat_message("user",avatar=USER_AVATAR):
             st.write(question)
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant",avatar=OBENG_AVATAR):
             with st.status("Searching Ghanaian law...", expanded=False) as status:
                 query_text = query_rewrite(question)
                 print(query_text)
@@ -299,44 +353,4 @@ if __name__ == "__main__":
 
 
 
-
-# if __name__ == "__main__":    
-# # crequest_context("what crime can lead to death sentence")
-#     generated_answer = ""
-#     with open("system3.txt","r") as f:
-#      system_prompt = f.read()
-# # print(system_prompt)     
-#     st.title("Personal legal Asistant")
-#     if "histories" not in st.session_state:
-#         st.session_state.histories = []   
-#     else:
-     
-#         for history in st.session_state.histories:
-
-#             with st.chat_message(history["role"]):
-#                 st.write(history["content"])
-
-      
-#     if question := st.chat_input("Ask something..."):
-        
-#         with st.chat_message("user"):
-#             st.write(question)
-        
-#         with st.chat_message("assistant"):
-#             query_text = query_rewrite(question)
-#             print(query_text)
-#             legistation_context = request_legislation_context(query_text,KB_CODE_legis)
-#             judgement_context = request_judgment_context(query_text,KB_CODE_judg)
-
-#             # print(context)
-#             user_prompt=prompt_template(legistation_chunks=legistation_context,question=question,judgement_chunks=judgement_context,history=st.session_state.histories)
-#             print(user_prompt)
-
-#             response_stream = deepseek_response_stream(main_user_prompt=user_prompt,main_sys_prompt=system_prompt)
-
-#             generated_answer = st.write_stream(response_stream)
-
-#         st.session_state.histories.append({"role": "user", "content": question})
-        
-#         st.session_state.histories.append({"role": "assistant", "content": generated_answer})
 
